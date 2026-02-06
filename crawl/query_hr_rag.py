@@ -3,12 +3,12 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
 from google.cloud import discoveryengine_v1 as discoveryengine
 
-# 1. Setup (Must match your indexing settings exactly)
-PROJECT_ID = "gcp-demos-390500"
-LOCATION = "us-central1"
+PROJECT_ID = os.getenv("GCP_PROJECT_ID")
+LOCATION = os.getenv("GCP_LOCATION", "us-central1")
+EMBEDDING_MODEL = "text-embedding-005"
 
 embeddings = GoogleGenerativeAIEmbeddings(
-    model="models/text-embedding-005",
+    model=f"models/{EMBEDDING_MODEL}",
     project=PROJECT_ID,
     location=LOCATION,
     vertexai=True,
