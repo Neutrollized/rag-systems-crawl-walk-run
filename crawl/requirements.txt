@@ -1,0 +1,9 @@
+httpx
+pypdf 
+python-dotenv
+
+chromadb
+langchain-community
+langchain-google-genai
+langchain-chroma
+google-cloud-discoveryengine
