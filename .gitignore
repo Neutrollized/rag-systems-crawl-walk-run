@@ -1,8 +1,11 @@
+**/.env
+
 **/*.pdf
 **/*.tgz
 **/data/
 **/chroma_db/
 
+**/__pycache__/
 
 # Local .terraform directories
 **/.terraform/*
