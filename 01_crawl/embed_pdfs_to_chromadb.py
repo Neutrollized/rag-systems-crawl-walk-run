@@ -51,7 +51,12 @@ def download_and_extract(url: str, dest_path: str="./data") -> str:
     
     print(f"Extracting to {dest_path}...")
     with tarfile.open(local_tar, "r:gz") as tar:
-        tar.extractall(path=dest_path)
+        # exclude AppleDouble files
+        members = [
+            m for m in tar.getmembers()
+            if not Path(m.name).name.startswith("._") and "__MACOSX" not in m.name
+        ]
+        tar.extractall(path=dest_path, members=members)
     
     os.remove(local_tar) # Cleanup
     return dest_path
