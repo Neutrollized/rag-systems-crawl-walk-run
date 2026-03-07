@@ -66,6 +66,7 @@ def download_and_extract(url: str, dest_path: str="./data") -> str:
 # main
 #-------------------
 if __name__ == "__main__":
+    # extracting PDFs
     DATA_URL = "https://storage.googleapis.com/public-file-server/genai-downloads/bc_hr_policies.tgz"
     DATA_DIR = download_and_extract(DATA_URL)
 
