@@ -4,6 +4,7 @@
 **/*.tgz
 **/data/
 **/chroma_db/
+**/lancedb_data/
 
 **/__pycache__/
 

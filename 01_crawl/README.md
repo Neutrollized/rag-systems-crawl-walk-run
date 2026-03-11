@@ -28,4 +28,3 @@ The script first downloads the tarball and unpacks it into a local directory. Th
 > [!NOTE]
 > You can also swap out Gemini for a different embedding model such as Cohere's that I use in the "Walk" example,
 > but make sure you use the same model for retrieval as you do indexing.
-
