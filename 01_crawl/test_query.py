@@ -26,7 +26,8 @@ vectorstore = Chroma(
     embedding_function=embeddings
 )
 
-query = "How many vacation days am I entitled to?"
+#query = "What's the harassment policy like?"
+query = "What's the policy for job offers?"
 initial_results = vectorstore.similarity_search(query, k=5) # Get top 5 relevant chunks
 
 records = []
@@ -34,4 +35,4 @@ print(f"\n--- Results for: \"{query}\" ---\n")
 for i, doc in enumerate(initial_results):
     source = doc.metadata.get("source", "Unknown")
     print(f"Chunk {i+1} | Source: {source}:")
-    print(f"{doc.page_content[:200]}...\n") # Print first 200 chars
+    print(f"{doc.page_content[:250]}...\n") # Print first 250 chars
