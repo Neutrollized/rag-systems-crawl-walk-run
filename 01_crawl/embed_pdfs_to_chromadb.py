@@ -28,8 +28,8 @@ def download_and_extract(url: str, dest_path: str="./data") -> str:
     """Downloads and extracts tarball from URL
 
     Args:
-        url: URL of the data tarball
-        dest_path: Local path to extra the files to
+        url (str): URL of the data tarball
+        dest_path (str): Local path to extra the files to
 
     Returns:
         The path which the files were extract to,

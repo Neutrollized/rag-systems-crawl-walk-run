@@ -48,9 +48,9 @@ def query_hr(user_query: str, num_results: int = 10, threshold: float = 0.6):
     # semantic search
     db = lancedb.connect(DB_PATH)
     tbl = db.open_table("bc_hr_policies")
-    # make sure you specify distance_type("cosine") as the default is Euclidean distance ("l2")
+    # make sure you specify distance_type as the default is Euclidean distance ("l2")
     # Cohere reranker integration: https://docs.lancedb.com/integrations/reranking/cohere
-    results = tbl.search(query_vector).distance_type("cosine").limit(num_results).to_list()
+    results = tbl.search(query_vector).distance_type("dot").limit(num_results).to_list()
 
     if not results:
         return {"status": "no_results_found", "data": []}

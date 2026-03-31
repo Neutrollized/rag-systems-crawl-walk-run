@@ -48,9 +48,9 @@ def query_rag(user_query: str, threshold: float = 0.9) -> tuple[list, list]:
 
     #query results
     RESULTS_N = 10
-    # make sure you specify distance_type("cosine") as the default is Euclidean distance ("l2")
-    # Cohere reranker integration: https://docs.lancedb.com/integrations/reranking/cohere
-    results = tbl.search(query_vector).distance_type("cosine").limit(RESULTS_N).to_list()
+    # make sure you specify distance_type as the default is Euclidean distance ("l2")
+    # I'm using "dot" over "cosine" because "dot" is computationally cheaper/faster
+    results = tbl.search(query_vector).distance_type("dot").limit(RESULTS_N).to_list()
 
     candidate_responses = []
     for res in results:
