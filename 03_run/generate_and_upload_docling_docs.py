@@ -126,7 +126,7 @@ if __name__ == "__main__":
     DATA_DIR = download_and_extract(DATA_URL)
 
     docling_docs = Path("./docling_docs")
-    docling_docs.mkdir(parents="True, exist_ok=True")
+    docling_docs.mkdir(parents=True, exist_ok=True)
 
     print("> Processing PDFs...")
     data_path = Path(DATA_DIR)
