@@ -22,7 +22,7 @@ RAG_CORPUS = os.getenv("RAG_CORPUS")
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
 
 MODELARMOR_LOCATION      = os.getenv("MODELARMOR_LOCATION", "us")
-MODELARMOR_TEMPLATE_NAME = os.getenv("TEMPLATE_NAME")
+MODELARMOR_TEMPLATE_NAME = os.getenv("MODELARMOR_TEMPLATE_NAME")
 
 #model="gemini-3.1-flash-lite-preview"
 model="gemini-3.1-pro-preview"
