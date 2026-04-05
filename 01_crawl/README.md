@@ -2,6 +2,9 @@
 
 Here, we are going to be covering the basic components of RAG. 
 
+[Medium blog post](https://medium.com/@glen.yu/implementing-a-rag-system-crawl-d553ed164611)
+[DEV Community blog post](https://dev.to/gde/implementing-a-rag-system-crawl-5li)
+
 
 ## Prerequisites / Setup
 You're going to first need a `.env` file with the following:

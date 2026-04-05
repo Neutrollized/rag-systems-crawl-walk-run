@@ -6,6 +6,10 @@ Expanding on "Crawl", we're going to level-up our document processing by using [
 > You will need to sign up for a free Cohere account and API key to access the models
 
 
+[Medium blog post](https://medium.com/@glen.yu/implementing-a-rag-system-walk-c207aea0cd6b)
+[DEV Community blog post](https://dev.to/gde/implementing-a-rag-system-walk-4h76)
+
+
 ## Prerequisites / Setup
 You're going to first need a `.env` file with the following:
 ```

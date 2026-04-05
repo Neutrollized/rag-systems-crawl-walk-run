@@ -23,4 +23,6 @@ Builds on 'Crawl' phase:
 - Perform reranking after semantic search
 
 ### Run
-- WIP
+Run a fully-managed RAG system that applies the concepts covered in "Crawl" and "Walk" phases:
+- Vertex AI RAG Engine
+- Model Armor to provide guardrails
