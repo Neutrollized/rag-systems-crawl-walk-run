@@ -3,6 +3,7 @@
 **/*.pdf
 **/*.tgz
 **/data/
+**/docling_docs/
 **/chroma_db/
 **/lancedb_data/
 
