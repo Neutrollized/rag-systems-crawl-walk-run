@@ -9,8 +9,7 @@ hr_rag_tool = FunctionTool(func=query_hr)
 #-------------------
 # settings
 #-------------------
-#model="gemini-3.1-flash-lite-preview"
-model="gemini-3.1-pro-preview"
+model="gemini-3.5-flash"
 
 
 #-----------------
