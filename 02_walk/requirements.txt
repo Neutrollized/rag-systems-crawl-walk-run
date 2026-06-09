@@ -1,9 +1,9 @@
 httpx
 python-dotenv
 
-docling
+docling==2.99.0
 numpy
-cohere
+cohere==7.0.3
 
 lancedb
 pydantic
@@ -15,3 +15,4 @@ google-adk==1.14.1
 google-cloud-aiplatform==1.126.1
 google-cloud-discoveryengine
 google-cloud-storage==2.19.0
+google-genai==1.75.0
