@@ -2,6 +2,7 @@ import os
 import sys
 import httpx
 import tarfile
+import time
 from pathlib import Path
 from dotenv import load_dotenv
 from typing import Tuple
@@ -112,7 +113,7 @@ def docling_chunk_pdf(file: str) -> tuple[list, list]:
 
 
 def cohere_embedding(chunk_texts: list, embedding_model: str, output_dimension: int) -> list:
-    """Using Cohere embedding model to embed text
+    """Using Cohere embedding model to embed text in safe batches of 96 chunks to comply with Cohere's API limits.
     
     Args:
         chunk_texts (list): Chunked text
@@ -123,18 +124,50 @@ def cohere_embedding(chunk_texts: list, embedding_model: str, output_dimension: 
         A nested list where each sub-list represents a vector embedding of the chunked text
     """
     co = cohere.ClientV2()
+    all_vectors = []
 
-    response = co.embed(
-        texts=chunk_texts,
-        model=embedding_model,
-        input_type="search_document",
-        output_dimension=output_dimension,
-        embedding_types=["float"]
-    )
+    # Cohere strictly enforces a max of 96 texts per request
+    BATCH_SIZE = 96
 
-    vector = response.embeddings.float
+    for i in range(0, len(chunk_texts), BATCH_SIZE):
+        batch = chunk_texts[i : i + BATCH_SIZE]
+        print(f"   -> Embedding batch {(i // BATCH_SIZE) + 1}/{(len(chunk_texts) - 1) // BATCH_SIZE + 1} ({len(batch)} chunks)...")
 
-    return vector
+        max_retries = 5
+        retry_delay = 2
+        batch_vector = None
+
+        for attempt in range(max_retries):
+            try:
+                response = co.embed(
+                    texts=batch,
+                    model=embedding_model,
+                    input_type="search_document",
+                    output_dimension=output_dimension,
+                    embedding_types=["float"]
+                )
+                batch_vector = response.embeddings.float
+                break  # Successfully got embeddings, exit retry loop
+
+            except Exception as e:
+                # If we actually hit a 429 rate limit now, back off gracefully
+                if "429" in str(e) or "limit" in str(e).lower():
+                    if attempt == max_retries - 1:
+                        raise e
+                    print(f"      ⚠️ Rate limit hit. Retrying batch in {retry_delay}s...")
+                    time.sleep(retry_delay)
+                    retry_delay *= 2
+                else:
+                    # If it's any other error, crash immediately so we can see it
+                    raise e
+
+        if batch_vector:
+            all_vectors.extend(batch_vector)
+
+        # A tiny pause between successful batches keeps the API provider happy
+        time.sleep(0.2)
+
+    return all_vectors
 
 
 def lancedb_insert(file: str, chunks: list, chunk_texts: list, vectors: list):
