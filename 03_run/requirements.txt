@@ -1,7 +1,7 @@
 httpx
 python-dotenv
 
-docling
+docling==2.99.0
 numpy
 
 opentelemetry-api==1.39.1
@@ -13,5 +13,6 @@ google-cloud-aiplatform==1.126.1
 google-cloud-discoveryengine
 google-cloud-modelarmor
 google-cloud-storage==2.19.0
+google-genai==1.75.0
 tenacity==8.5.0
 websockets==15.0.1
