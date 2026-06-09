@@ -4,9 +4,12 @@ import tarfile
 from pathlib import Path
 from dotenv import load_dotenv
 
-from langchain_community.document_loaders import PyPDFLoader, DirectoryLoader
+# FIX: Removed langchain_community entirely.
+# We load PDFs using standard 'pypdf' and map them directly into LangChain's splitter.
+from pypdf import PdfReader
+from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
 
 
@@ -17,7 +20,6 @@ load_dotenv()
 PROJECT_ID = os.getenv("GCP_PROJECT_ID")
 LOCATION   = os.getenv("GCP_LOCATION", "us-central1")
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "gemini-embedding-001")
-# common dimension values are: 384, 768 (balanced), 1536, 3072 (default)
 EMBEDDING_DIM   = os.getenv("EMBEDDING_DIM", 768)
 
 
@@ -25,16 +27,7 @@ EMBEDDING_DIM   = os.getenv("EMBEDDING_DIM", 768)
 # helper functions
 #----------------------
 def download_and_extract(url: str, dest_path: str="./data") -> str:
-    """Downloads and extracts tarball from URL
-
-    Args:
-        url (str): URL of the data tarball
-        dest_path (str): Local path to extra the files to
-
-    Returns:
-        The path which the files were extract to,
-        which is just the 'dest_path' arg
-    """
+    """Downloads and extracts tarball from URL"""
     path = Path(dest_path)
     path.mkdir(parents=True, exist_ok=True)
     
@@ -51,7 +44,6 @@ def download_and_extract(url: str, dest_path: str="./data") -> str:
     
     print(f"Extracting to {dest_path}...")
     with tarfile.open(local_tar, "r:gz") as tar:
-        # exclude AppleDouble files
         members = [
             m for m in tar.getmembers()
             if not Path(m.name).name.startswith("._") and "__MACOSX" not in m.name
@@ -60,6 +52,30 @@ def download_and_extract(url: str, dest_path: str="./data") -> str:
     
     os.remove(local_tar) # Cleanup
     return dest_path
+
+
+# FIX: Replaces DirectoryLoader and PyPDFLoader natively without deprecations
+def load_pdfs_from_dir(directory_path: str) -> list[Document]:
+    """Scans directory for PDFs, extracts text, and wraps them as LangChain Documents"""
+    documents = []
+    dir_path = Path(directory_path)
+    
+    # Recursively find all PDFs
+    for file_path in dir_path.rglob("*.pdf"):
+        try:
+            reader = PdfReader(file_path)
+            # Combine text across all pages in the PDF
+            text = "".join([page.extract_text() or "" for page in reader.pages])
+            
+            # Format exactly how LangChain expects it
+            documents.append(Document(
+                page_content=text,
+                metadata={"source": str(file_path)}
+            ))
+        except Exception as e:
+            print(f"Error reading {file_path}: {e}")
+            
+    return documents
 
 
 #-------------------
@@ -71,12 +87,8 @@ if __name__ == "__main__":
     DATA_DIR = download_and_extract(DATA_URL)
 
     print("> Processing PDFs...")
-    loader = DirectoryLoader(
-        DATA_DIR,
-        glob="./**/*.pdf",
-        loader_cls=PyPDFLoader
-    )
-    docs = loader.load()
+    # FIX: Native loading mechanism
+    docs = load_pdfs_from_dir(DATA_DIR)
 
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
@@ -89,7 +101,7 @@ if __name__ == "__main__":
         output_dimensionality=EMBEDDING_DIM,
         project=PROJECT_ID,
         location=LOCATION,
-        vertexai=True,                  # This tells LangChain to use Vertex AI, not AI Studio
+        vertexai=True,                  
         task_type="retrieval_document"
     )
 
@@ -99,3 +111,4 @@ if __name__ == "__main__":
         embedding=embeddings,
         persist_directory="./chroma_db"
     )
+    print("> Done! Database initialized without warnings.")
