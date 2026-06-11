@@ -28,6 +28,7 @@ accel_options = AcceleratorOptions(
 
 pipeline_options = PdfPipelineOptions(accelerator_options=accel_options)
 pipeline_options.do_ocr = False
+pipeline_options.generate_page_images = True
 
 converter = DocumentConverter(
     format_options={
