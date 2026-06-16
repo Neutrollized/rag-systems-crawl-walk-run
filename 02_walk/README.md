@@ -20,3 +20,6 @@ EMBEDDING_DIM=384
 RERANKING_MODEL="rerank-v4.0-fast"
 ```
 
+
+## Hybrid Search
+Added a Hybrid Search option which does semantic + BM25 search. While semantic search mainly covers "intent", it can miss/fail to interpret nuances such as a part number, specialized terminology, or acronyms (and generally and out-of-domain data). Hybrid search adds in BM25 (Best Matching 25), which look for exact character matches to potentially help cover for anything nuanced that might have been missed through semantic search alone.

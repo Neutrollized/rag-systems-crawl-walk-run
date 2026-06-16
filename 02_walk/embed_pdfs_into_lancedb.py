@@ -222,3 +222,7 @@ if __name__ == "__main__":
         chunks, chunk_texts = docling_chunk_pdf(file)
         vectors = cohere_embedding(chunk_texts, EMBEDDING_MODEL, int(EMBEDDING_DIM))
         lancedb_insert(str(file.name), chunks, chunk_texts, vectors)
+
+    print("> Building full-text search index...")
+    tbl.create_fts_index("text", replace=True)
+    print("> FTS index built.")

@@ -2,9 +2,10 @@ from google.adk.agents.llm_agent import LlmAgent
 from google.adk.tools import FunctionTool
 from google.genai import types
 
-from .tools import query_hr
+from .tools import query_hr, hybrid_query_hr
 
-hr_rag_tool = FunctionTool(func=query_hr)
+# using hybrid search here instead of just regular semantic search
+hr_rag_tool = FunctionTool(func=hybrid_query_hr)
 
 #-------------------
 # settings
