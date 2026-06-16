@@ -24,7 +24,7 @@ PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
 MODELARMOR_LOCATION      = os.getenv("MODELARMOR_LOCATION", "us")
 MODELARMOR_TEMPLATE_NAME = os.getenv("MODELARMOR_TEMPLATE_NAME")
 
-model="gemini-3.5-flash"
+MODEL="gemini-3.5-flash"
 
 
 #-----------------
@@ -132,7 +132,7 @@ guard = ModelArmorGuard(
 
 hr_agent = LlmAgent(
     name="hr_agent",
-    model=model,
+    model=MODEL,
     description="Specialist in company HR policies and procedures.",
     instruction=(
         "You are a professional HR assistant. Your goal is to answer questions "

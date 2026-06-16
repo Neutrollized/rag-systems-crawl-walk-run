@@ -14,13 +14,14 @@ The basics:
 - Chunk + create embeddings
 - Insert into local vector database
 - Perform semantic search
-- ADK agent to interact with the user 
+- ADK agent uses local Ollama model to interact with the user
 
 ### Walk
 Builds on 'Crawl' phase:
 - Improves document processing
 - Improves chunking strategy
 - Perform reranking after semantic search
+- ADK agent uses Gemini model to interact with the user
 
 ### Run
 Run a fully-managed RAG system that applies the concepts covered in "Crawl" and "Walk" phases:

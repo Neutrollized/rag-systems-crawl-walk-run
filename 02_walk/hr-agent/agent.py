@@ -9,7 +9,7 @@ hr_rag_tool = FunctionTool(func=query_hr)
 #-------------------
 # settings
 #-------------------
-model="gemini-3.5-flash"
+MODEL="gemini-3.5-flash"
 
 
 #-----------------
@@ -17,7 +17,7 @@ model="gemini-3.5-flash"
 #-----------------
 hr_agent = LlmAgent(
     name="hr_agent",
-    model=model,
+    model=MODEL,
     description="Specialist in company HR policies and procedures.",
     instruction=(
         "You are a professional HR assistant. Your goal is to answer questions "

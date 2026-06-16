@@ -1,6 +1,15 @@
+import os
 from google.adk.agents.llm_agent import LlmAgent
+from google.adk.models.lite_llm import LiteLlm
 from google.adk.tools import FunctionTool
 from google.genai import types
+
+import litellm
+litellm.suppress_debug_info = True
+litellm.verbose = False
+
+import logging
+logging.getLogger("LiteLLM").setLevel(logging.WARNING)
 
 from .tools import query_hr
 
@@ -9,7 +18,8 @@ hr_rag_tool = FunctionTool(func=query_hr)
 #-------------------
 # settings
 #-------------------
-model="gemini-3.5-flash"
+OLLAMA_API_BASE = os.getenv("OLLAMA_API_BASE", "http://localhost:11434")
+MODEL=LiteLlm(model="ollama_chat/gemma4:e4b", extra_body={"think": False})
 
 
 #-----------------
@@ -17,7 +27,7 @@ model="gemini-3.5-flash"
 #-----------------
 hr_agent = LlmAgent(
     name="hr_agent",
-    model=model,
+    model=MODEL,
     description="Specialist in company HR policies and procedures.",
     instruction=(
         "You are a professional HR assistant. Your goal is to answer questions "

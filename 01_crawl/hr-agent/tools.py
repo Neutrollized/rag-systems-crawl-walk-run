@@ -48,7 +48,7 @@ def query_hr(query: str, relevant_chunks: int = 5):
             formatted_data.append({
                 "content": doc.page_content,
                 "source": os.path.basename(doc.metadata.get("source", "Unknown")),  # only want the filename
-                "page": doc.metadata.get("page", "N/A") + 1                         # counter starts at 0
+                "page": (doc.metadata.get("page") + 1) if doc.metadata.get("page") is not None else "N/A"
             })
 
         return {
@@ -92,7 +92,7 @@ def query_hr_v2(query: str, relevant_chunks: int = 5, threshold: float = 0.5):
             formatted_data.append({
                 "content": doc.page_content,
                 "source": os.path.basename(doc.metadata.get("source", "Unknown")),  # only want the filename
-                "page": doc.metadata.get("page", "N/A") + 1                         # counter starts at 0
+                "page": (doc.metadata.get("page") + 1) if doc.metadata.get("page") is not None else "N/A"
             })
 
         return {
