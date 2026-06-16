@@ -4,6 +4,14 @@ from google.adk.models.lite_llm import LiteLlm
 from google.adk.tools import FunctionTool
 from google.genai import types
 
+from .tools import query_hr
+
+hr_rag_tool = FunctionTool(func=query_hr)
+
+
+#--------------------------------------------------
+# Suppress logs/warnings
+#--------------------------------------------------
 import litellm
 litellm.suppress_debug_info = True
 litellm.verbose = False
@@ -11,9 +19,6 @@ litellm.verbose = False
 import logging
 logging.getLogger("LiteLLM").setLevel(logging.WARNING)
 
-from .tools import query_hr
-
-hr_rag_tool = FunctionTool(func=query_hr)
 
 #-------------------
 # settings
