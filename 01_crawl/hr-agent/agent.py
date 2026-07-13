@@ -25,7 +25,7 @@ logging.getLogger("LiteLLM").setLevel(logging.WARNING)
 #-------------------
 OLLAMA_API_BASE = os.getenv("OLLAMA_API_BASE", "http://localhost:11434")
 MODEL           = os.getenv("MODEL", "gemma4:12b-mlx")
-MODEL_THINKING  = bool(os.getenv("MODEL_THINKING", False))
+MODEL_THINKING  = os.getenv("MODEL_THINKING", "false").strip().lower() in ("true", "1", "yes")
 
 
 #-----------------
@@ -36,11 +36,7 @@ hr_agent = LlmAgent(
     model=LiteLlm(
         model=f"ollama_chat/{MODEL}",
         api_base=OLLAMA_API_BASE, # Ensure the agent actually points to your env var base!
-        api_kwargs={
-            "extra_body": {
-                "think": MODEL_THINKING
-            }
-        }
+        think=MODEL_THINKING
     ),
     description="Specialist in company HR policies and procedures.",
     instruction=(
