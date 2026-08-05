@@ -1,45 +1,41 @@
 import os
+
 from dotenv import load_dotenv
-
-from google.adk.agents.llm_agent import LlmAgent
-from google.genai import types
-from google.adk.tools.retrieval.vertex_ai_rag_retrieval import VertexAiRagRetrieval
-from vertexai.preview import rag
-
-from google.cloud import modelarmor_v1
 from google.adk.agents.callback_context import CallbackContext
+from google.adk.agents.llm_agent import LlmAgent
 from google.adk.models.llm_request import LlmRequest
 from google.adk.models.llm_response import LlmResponse
+from google.adk.tools.retrieval.vertex_ai_rag_retrieval import VertexAiRagRetrieval
+from google.cloud import modelarmor_v1
+from google.genai import types
+from vertexai.preview import rag
 
-from typing import Optional
-
-
-#-------------------
+# -------------------
 # settings
-#-------------------
+# -------------------
 load_dotenv()
 RAG_CORPUS = os.getenv("RAG_CORPUS")
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
 
-MODELARMOR_LOCATION      = os.getenv("MODELARMOR_LOCATION", "us")
+MODELARMOR_LOCATION = os.getenv("MODELARMOR_LOCATION", "us")
 MODELARMOR_TEMPLATE_NAME = os.getenv("MODELARMOR_TEMPLATE_NAME")
 
-MODEL="gemini-3.6-flash"
+MODEL = "gemini-3.6-flash"
 
 
-#-----------------
+# -----------------
 # tools
-#-----------------
+# -----------------
 class ModelArmorGuard:
     def __init__(self, project_id: str, location: str, template_name: str):
         self.template_name = template_name
         self.client = modelarmor_v1.ModelArmorClient(
-            client_options={
-                "api_endpoint": f"modelarmor.{location}.rep.googleapis.com"
-            }
+            client_options={"api_endpoint": f"modelarmor.{location}.rep.googleapis.com"}
         )
 
-    def before_model_callback(self, callback_context: CallbackContext, llm_request: LlmRequest) -> Optional[LlmResponse]:
+    def before_model_callback(
+        self, callback_context: CallbackContext, llm_request: LlmRequest
+    ) -> LlmResponse | None:
         """Sanitize user input before Gemini + RagEngine"""
         user_text = ""
         if llm_request.contents:
@@ -60,20 +56,22 @@ class ModelArmorGuard:
             )
             result = response.sanitization_result
             # uncomment to see JSON response that gets returned
-            #print(f"Sanitized result: {result}")
+            # print(f"Sanitized result: {result}")
 
             if result.filter_match_state == modelarmor_v1.FilterMatchState.MATCH_FOUND:
-                blocked_by = get_matched_filters(result.filter_results)
-                #print(f"Input blocked by Model Armor: {blocked_by}")
+                # blocked_by = get_matched_filters(result.filter_results)
+                # print(f"Input blocked by Model Armor: {blocked_by}")
                 return LlmResponse(
                     content=types.Content(
                         role="model",
-                        parts=[types.Part(text=(
-                            "Request was flagged by our security filters."
-                        ))],
+                        parts=[
+                            types.Part(
+                                text=("Request was flagged by our security filters.")
+                            )
+                        ],
                     )
                 )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             print(f"Callback error: {e}")
 
         return None
@@ -84,23 +82,31 @@ def get_matched_filters(filter_results: dict) -> list[str]:
     matched = []
     MATCH_FOUND = modelarmor_v1.FilterMatchState.MATCH_FOUND
 
+    # https://docs.cloud.google.com/model-armor/reference/rest/v1/SanitizationResult
     for key, value in filter_results.items():
         try:
-            if key == "rai":    # responsible AI
-                if value.rai_filter_result.match_state == MATCH_FOUND:
-                    matched.append("rai")
-            elif key == "pi_and_jailbreak":
-                if value.pi_and_jailbreak_filter_result.match_state == MATCH_FOUND:
-                    matched.append("pi_and_jailbreak")
-            elif key == "sdp":  # sensitive data protection
-                if value.sdp_filter_result.match_state == MATCH_FOUND:
-                    matched.append("sdp")
-            elif key == "malicious_uris":
-                if value.malicious_uris_filter_result.match_state == MATCH_FOUND:
-                    matched.append("sdp")
-            elif key == "csam":  # child sexual abuse material
-                if value.csam_filter_result.match_state == MATCH_FOUND:
-                    matched.append("csam")
+            if (
+                key == "rai" and value.rai_filter_result.match_state == MATCH_FOUND
+            ):  # responsible AI
+                matched.append("rai")
+            elif (
+                key == "pi_and_jailbreak"
+                and value.pi_and_jailbreak_filter_result.match_state == MATCH_FOUND
+            ):
+                matched.append("pi_and_jailbreak")
+            elif (
+                key == "sdp" and value.sdp_filter_result.match_state == MATCH_FOUND
+            ):  # sensitive data protection
+                matched.append("sdp")
+            elif (
+                key == "malicious_uris"
+                and value.malicious_uris_filter_result.match_state == MATCH_FOUND
+            ):
+                matched.append("malicious_uris")
+            elif (
+                key == "csam" and value.csam_filter_result.match_state == MATCH_FOUND
+            ):  # chiled sexual abuse material
+                matched.append("csam")
         except AttributeError:
             matched.append(f"{key} (unknown structure)")
 
@@ -121,9 +127,9 @@ query_hr = VertexAiRagRetrieval(
 )
 
 
-#-----------------
+# -----------------
 # agents
-#-----------------
+# -----------------
 guard = ModelArmorGuard(
     project_id=PROJECT_ID,
     location=MODELARMOR_LOCATION,
