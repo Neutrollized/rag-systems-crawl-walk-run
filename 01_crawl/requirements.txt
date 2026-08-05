@@ -2,7 +2,7 @@ httpx
 pypdf 
 python-dotenv
 
-chromadb
+chromadb==1.5.5
 opentelemetry-api==1.41.1
 opentelemetry-exporter-gcp-logging==1.12.0a0
 opentelemetry-exporter-otlp-proto-grpc==1.41.1
