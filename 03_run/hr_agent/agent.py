@@ -24,7 +24,7 @@ PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
 MODELARMOR_LOCATION      = os.getenv("MODELARMOR_LOCATION", "us")
 MODELARMOR_TEMPLATE_NAME = os.getenv("MODELARMOR_TEMPLATE_NAME")
 
-MODEL="gemini-3.5-flash"
+MODEL="gemini-3.6-flash"
 
 
 #-----------------

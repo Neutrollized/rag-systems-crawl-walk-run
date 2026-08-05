@@ -10,7 +10,7 @@ hr_rag_tool = FunctionTool(func=hybrid_query_hr)
 #-------------------
 # settings
 #-------------------
-MODEL="gemini-3.5-flash"
+MODEL="gemini-3.6-flash"
 
 
 #-----------------

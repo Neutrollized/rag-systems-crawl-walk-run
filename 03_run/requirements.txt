@@ -1,18 +1,19 @@
 httpx
 python-dotenv
 
-docling==2.99.0
+docling==2.118.0
 numpy
 
-opentelemetry-api==1.39.1
-opentelemetry-exporter-gcp-logging==1.10.0a0
-opentelemetry-exporter-otlp-proto-http==1.39.1
+opentelemetry-api==1.41.1
+opentelemetry-exporter-gcp-logging==1.12.0a0
+opentelemetry-exporter-otlp-proto-grpc==1.41.1
+opentelemetry-exporter-otlp-proto-http==1.41.1
 
-google-adk==1.14.1
-google-cloud-aiplatform==1.126.1
+google-adk==2.6.2
+google-cloud-aiplatform==1.163.0
 google-cloud-discoveryengine
 google-cloud-modelarmor
-google-cloud-storage==2.19.0
-google-genai==1.75.0
-tenacity==8.5.0
-websockets==15.0.1
+google-cloud-storage
+google-genai==2.16.0
+tenacity
+websockets
