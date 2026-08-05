@@ -1,32 +1,25 @@
 import os
-import sys
-import httpx
-import tarfile
-from pathlib import Path
-from dotenv import load_dotenv
-from typing import Tuple
 
-import json
 import cohere
 import lancedb
+from dotenv import load_dotenv
 
-
-#---------------------------
+# ---------------------------
 # setup/config
-#---------------------------
+# ---------------------------
 load_dotenv()
-COHERE_API_KEY  = os.getenv("COHERE_API_KEY")
+COHERE_API_KEY = os.getenv("COHERE_API_KEY")
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "embed-english-light-v3.0")
-EMBEDDING_DIM   = os.getenv("EMBEDDING_DIM", 384)
+EMBEDDING_DIM = os.getenv("EMBEDDING_DIM", "384")
 RERANKING_MODEL = os.getenv("RERANKING_MODEL", "rerank-v4.0-fast")
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(current_dir, "..", "lancedb_data")
 
 
-#------------------------
+# ------------------------
 # helper functions
-#------------------------
+# ------------------------
 def query_hr(user_query: str, num_results: int = 10, threshold: float = 0.6):
     """Perform semantic search of user query against vector database
 
@@ -41,8 +34,8 @@ def query_hr(user_query: str, num_results: int = 10, threshold: float = 0.6):
     query_vector = co.embed(
         texts=[user_query],
         model=EMBEDDING_MODEL,
-        input_type="search_query", # Use search_query for the actual question
-        output_dimension=int(EMBEDDING_DIM)
+        input_type="search_query",  # Use search_query for the actual question
+        output_dimension=int(EMBEDDING_DIM),
     ).embeddings.float[0]
 
     # semantic search
@@ -57,16 +50,18 @@ def query_hr(user_query: str, num_results: int = 10, threshold: float = 0.6):
 
     candidate_responses = []
     for res in results:
-        candidate_responses.append({
-            "content": res.get('text'),
-            "source": res.get('source'),
-            "heading": res.get('heading'),
-            "page": res.get('page_no', 'N/A'),
-            "search_distance": res.get('_relevance_score')
-        })
+        candidate_responses.append(
+            {
+                "content": res.get("text"),
+                "source": res.get("source"),
+                "heading": res.get("heading"),
+                "page": res.get("page_no", "N/A"),
+                "search_distance": res.get("_relevance_score"),
+            }
+        )
 
     # extracting just the text content for reranking
-    documents_to_rerank = [doc['content'] for doc in candidate_responses]
+    documents_to_rerank = [doc["content"] for doc in candidate_responses]
 
     # rerank
     response = co.rerank(
@@ -81,21 +76,27 @@ def query_hr(user_query: str, num_results: int = 10, threshold: float = 0.6):
         # Use the 'index' from Cohere to grab the full original dictionary
         original_data = candidate_responses[res.index]
 
-        reranked_results.append({
-            "content": original_data["content"],
-            "source": original_data["source"],
-            "heading": original_data["heading"],
-            "page": original_data["page"],
-            "relevance_score": res.relevance_score
-        })
+        reranked_results.append(
+            {
+                "content": original_data["content"],
+                "source": original_data["source"],
+                "heading": original_data["heading"],
+                "page": original_data["page"],
+                "relevance_score": res.relevance_score,
+            }
+        )
 
     def filter_by_score(current_threshold):
-        return [item for item in reranked_results if item["relevance_score"] >= current_threshold]
+        return [
+            item
+            for item in reranked_results
+            if item["relevance_score"] >= current_threshold
+        ]
 
     filtered_results = filter_by_score(threshold)
 
     if not filtered_results:
-        return "No highly relevant documents found for this query" 
+        return "No highly relevant documents found for this query"
 
     return filtered_results
 
@@ -114,14 +115,14 @@ def hybrid_query_hr(user_query: str, num_results: int = 10, threshold: float = 0
     query_vector = co.embed(
         texts=[user_query],
         model=EMBEDDING_MODEL,
-        input_type="search_query", # Use search_query for the actual question
-        output_dimension=int(EMBEDDING_DIM)
+        input_type="search_query",  # Use search_query for the actual question
+        output_dimension=int(EMBEDDING_DIM),
     ).embeddings.float[0]
 
     # semantic search
     db = lancedb.connect(DB_PATH)
     tbl = db.open_table("bc_hr_policies")
-    
+
     # no need for .distance_type("dot") here since hybrid mode manages its own scoring
     results = (
         tbl.search(query_type="hybrid")
@@ -136,16 +137,18 @@ def hybrid_query_hr(user_query: str, num_results: int = 10, threshold: float = 0
 
     candidate_responses = []
     for res in results:
-        candidate_responses.append({
-            "content": res.get('text'),
-            "source": res.get('source'),
-            "heading": res.get('heading'),
-            "page": res.get('page_no', 'N/A'),
-            "search_distance": res.get('_relevance_score')
-        })
+        candidate_responses.append(
+            {
+                "content": res.get("text"),
+                "source": res.get("source"),
+                "heading": res.get("heading"),
+                "page": res.get("page_no", "N/A"),
+                "search_distance": res.get("_relevance_score"),
+            }
+        )
 
     # extracting just the text content for reranking
-    documents_to_rerank = [doc['content'] for doc in candidate_responses]
+    documents_to_rerank = [doc["content"] for doc in candidate_responses]
 
     # rerank
     response = co.rerank(
@@ -160,20 +163,26 @@ def hybrid_query_hr(user_query: str, num_results: int = 10, threshold: float = 0
         # Use the 'index' from Cohere to grab the full original dictionary
         original_data = candidate_responses[res.index]
 
-        reranked_results.append({
-            "content": original_data["content"],
-            "source": original_data["source"],
-            "heading": original_data["heading"],
-            "page": original_data["page"],
-            "relevance_score": res.relevance_score
-        })
+        reranked_results.append(
+            {
+                "content": original_data["content"],
+                "source": original_data["source"],
+                "heading": original_data["heading"],
+                "page": original_data["page"],
+                "relevance_score": res.relevance_score,
+            }
+        )
 
     def filter_by_score(current_threshold):
-        return [item for item in reranked_results if item["relevance_score"] >= current_threshold]
+        return [
+            item
+            for item in reranked_results
+            if item["relevance_score"] >= current_threshold
+        ]
 
     filtered_results = filter_by_score(threshold)
 
     if not filtered_results:
-        return "No highly relevant documents found for this query" 
+        return "No highly relevant documents found for this query"
 
     return filtered_results

@@ -1,34 +1,29 @@
 import os
-import sys
-import httpx
 import tarfile
 import time
 from pathlib import Path
-from dotenv import load_dotenv
-from typing import Tuple
-
-from docling.datamodel.accelerator_options import AcceleratorDevice, AcceleratorOptions
-from docling.datamodel.pipeline_options import PdfPipelineOptions
-from docling.document_converter import DocumentConverter, PdfFormatOption
-from docling.datamodel.base_models import InputFormat
-from docling.chunking import HybridChunker
 
 import cohere
-
+import httpx
 import lancedb
+from docling.chunking import HybridChunker
+from docling.datamodel.accelerator_options import AcceleratorDevice, AcceleratorOptions
+from docling.datamodel.base_models import InputFormat
+from docling.datamodel.pipeline_options import PdfPipelineOptions
+from docling.document_converter import DocumentConverter, PdfFormatOption
+from dotenv import load_dotenv
 from lancedb.pydantic import LanceModel, Vector
 
-
-#--------------------------------------------------------------
+# --------------------------------------------------------------
 # Settings for Apple Metal GPUs
-# - get the num_threads from About This Mac > 
-#   System Report... > 
-#   under Graphics/Displays > 
+# - get the num_threads from About This Mac >
+#   System Report... >
+#   under Graphics/Displays >
 #   Total Number of Cores
-#--------------------------------------------------------------
+# --------------------------------------------------------------
 accel_options = AcceleratorOptions(
     device=AcceleratorDevice.MPS,
-    num_threads=10  # Adjust based on your Mac's performance cores
+    num_threads=10,  # Adjust based on your Mac's performance cores
 )
 
 pipeline_options = PdfPipelineOptions(accelerator_options=accel_options)
@@ -36,19 +31,19 @@ pipeline_options.do_ocr = False
 pipeline_options.generate_page_images = True
 
 
-#----------------------
+# ----------------------
 # setup/config
-#----------------------
+# ----------------------
 load_dotenv()
-COHERE_API_KEY  = os.getenv("COHERE_API_KEY")
+COHERE_API_KEY = os.getenv("COHERE_API_KEY")
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "embed-english-light-v3.0")
-EMBEDDING_DIM   = os.getenv("EMBEDDING_DIM", 384)
+EMBEDDING_DIM = os.getenv("EMBEDDING_DIM", "384")
 
 
-#------------------------
+# ------------------------
 # helper functions
-#------------------------
-def download_and_extract(url: str, dest_path: str="./data") -> str:
+# ------------------------
+def download_and_extract(url: str, dest_path: str = "./data") -> str:
     """Downloads and extracts tarball from URL
 
     Args:
@@ -66,35 +61,34 @@ def download_and_extract(url: str, dest_path: str="./data") -> str:
 
     print(f"Downloading data tarball from {url}...")
 
-    with httpx.Client(follow_redirects=True) as client:
-        with client.stream("GET", url) as r:
-            r.raise_for_status()
-            with open(local_tar, "wb") as f:
-                for chunk in r.iter_bytes(chunk_size=8192):
-                    f.write(chunk)
+    with httpx.Client(follow_redirects=True) as client, client.stream("GET", url) as r:
+        r.raise_for_status()
+        with open(local_tar, "wb") as f:
+            f.writelines(r.iter_bytes(chunk_size=8192))
 
     print(f"Extracting to {dest_path}...")
     with tarfile.open(local_tar, "r:gz") as tar:
         members = [
-            m for m in tar.getmembers()
+            m
+            for m in tar.getmembers()
             if not Path(m.name).name.startswith("._") and "__MACOSX" not in m.name
         ]
         tar.extractall(path=dest_path, members=members)
 
-    os.remove(local_tar) # Cleanup
+    os.remove(local_tar)  # Cleanup
     return dest_path
 
 
 def docling_chunk_pdf(file: str) -> tuple[list, list]:
     """Chunks PDF file using Docling
 
-    Args:
-        file (str): Name of file to process
+        Args:
+            file (str): Name of file to process
 
-|   Returns:
-        A tuple of two lists
-        - A nested list where each sub-list represents a chunk and all its contents (metadata, text, etc.)
-        - A nested list where each sub-list represents a chunk of (only) processed text containing individual strings
+    |   Returns:
+            A tuple of two lists
+            - A nested list where each sub-list represents a chunk and all its contents (metadata, text, etc.)
+            - A nested list where each sub-list represents a chunk of (only) processed text containing individual strings
     """
     converter = DocumentConverter(
         format_options={
@@ -109,13 +103,15 @@ def docling_chunk_pdf(file: str) -> tuple[list, list]:
     chunker = HybridChunker()
     chunks = list(chunker.chunk(doc))
     chunk_texts = [c.text for c in chunks]
-    
+
     return chunks, chunk_texts
 
 
-def cohere_embedding(chunk_texts: list, embedding_model: str, output_dimension: int) -> list:
+def cohere_embedding(
+    chunk_texts: list, embedding_model: str, output_dimension: int
+) -> list:
     """Using Cohere embedding model to embed text in safe batches of 96 chunks to comply with Cohere's API limits.
-    
+
     Args:
         chunk_texts (list): Chunked text
         embedding_model (str): Cohere embedding model
@@ -132,7 +128,9 @@ def cohere_embedding(chunk_texts: list, embedding_model: str, output_dimension: 
 
     for i in range(0, len(chunk_texts), BATCH_SIZE):
         batch = chunk_texts[i : i + BATCH_SIZE]
-        print(f"   -> Embedding batch {(i // BATCH_SIZE) + 1}/{(len(chunk_texts) - 1) // BATCH_SIZE + 1} ({len(batch)} chunks)...")
+        print(
+            f"   -> Embedding batch {(i // BATCH_SIZE) + 1}/{(len(chunk_texts) - 1) // BATCH_SIZE + 1} ({len(batch)} chunks)..."
+        )
 
         max_retries = 5
         retry_delay = 2
@@ -145,7 +143,7 @@ def cohere_embedding(chunk_texts: list, embedding_model: str, output_dimension: 
                     model=embedding_model,
                     input_type="search_document",
                     output_dimension=output_dimension,
-                    embedding_types=["float"]
+                    embedding_types=["float"],
                 )
                 batch_vector = response.embeddings.float
                 break  # Successfully got embeddings, exit retry loop
@@ -154,13 +152,15 @@ def cohere_embedding(chunk_texts: list, embedding_model: str, output_dimension: 
                 # If we actually hit a 429 rate limit now, back off gracefully
                 if "429" in str(e) or "limit" in str(e).lower():
                     if attempt == max_retries - 1:
-                        raise e
-                    print(f"      ⚠️ Rate limit hit. Retrying batch in {retry_delay}s...")
+                        raise
+                    print(
+                        f"      ⚠️ Rate limit hit. Retrying batch in {retry_delay}s..."
+                    )
                     time.sleep(retry_delay)
                     retry_delay *= 2
                 else:
                     # If it's any other error, crash immediately so we can see it
-                    raise e
+                    raise
 
         if batch_vector:
             all_vectors.extend(batch_vector)
@@ -176,13 +176,17 @@ def lancedb_insert(file: str, chunks: list, chunk_texts: list, vectors: list):
 
     data = []
     for i, vector in enumerate(vectors):
-        data.append({
-            "vector": vector,
-            "text": chunk_texts[i],
-            "source": file,
-            "heading": chunks[i].meta.headings if chunks[i].meta.headings else [""],
-            "page_no": chunks[i].meta.doc_items[0].prov[0].page_no if chunks[i].meta.doc_items else 0
-        })
+        data.append(
+            {
+                "vector": vector,
+                "text": chunk_texts[i],
+                "source": file,
+                "heading": chunks[i].meta.headings if chunks[i].meta.headings else [""],
+                "page_no": chunks[i].meta.doc_items[0].prov[0].page_no
+                if chunks[i].meta.doc_items
+                else 0,
+            }
+        )
 
     tbl = db.open_table(TABLE_NAME)
     tbl.add(data)
@@ -190,9 +194,9 @@ def lancedb_insert(file: str, chunks: list, chunk_texts: list, vectors: list):
     print(f"Successfully indexed {len(data)} chunks into {DB_FILE}")
 
 
-#----------------
+# ----------------
 # main
-#----------------
+# ----------------
 if __name__ == "__main__":
     # extracting PDFs
     DATA_URL = "https://storage.googleapis.com/public-file-server/genai-downloads/bc_hr_policies.tgz"
@@ -202,6 +206,7 @@ if __name__ == "__main__":
     # LanceDB init
     DB_FILE = "lancedb_data"
     TABLE_NAME = "bc_hr_policies"
+
     class DocumentSchema(LanceModel):
         vector: Vector(int(EMBEDDING_DIM))  # <--- Specifying dimensions here
         text: str
@@ -216,7 +221,7 @@ if __name__ == "__main__":
     print("> Processing PDFs...")
     data_path = Path(DATA_DIR)
     pdf_files = list(data_path.glob("*.pdf"))
-    
+
     for file in pdf_files:
         print(file.name)
         chunks, chunk_texts = docling_chunk_pdf(file)
