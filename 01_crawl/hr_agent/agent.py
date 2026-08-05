@@ -1,42 +1,48 @@
 import os
+
 from google.adk.agents.llm_agent import LlmAgent
 from google.adk.models.lite_llm import LiteLlm
 from google.adk.tools import FunctionTool
-from google.genai import types
 
 from .tools import query_hr
 
 hr_rag_tool = FunctionTool(func=query_hr)
 
 
-#--------------------------------------------------
+# --------------------------------------------------
 # Suppress logs/warnings
-#--------------------------------------------------
+# --------------------------------------------------
 import litellm
+
 litellm.suppress_debug_info = True
 litellm.verbose = False
 
 import logging
+
 logging.getLogger("LiteLLM").setLevel(logging.WARNING)
 
 
-#-------------------
+# -------------------
 # Ollama settings
-#-------------------
+# -------------------
 OLLAMA_API_BASE = os.getenv("OLLAMA_API_BASE", "http://localhost:11434")
-MODEL           = os.getenv("MODEL", "gemma4:12b-mlx")
-MODEL_THINKING  = os.getenv("MODEL_THINKING", "false").strip().lower() in ("true", "1", "yes")
+MODEL = os.getenv("MODEL", "gemma4:12b-mlx")
+MODEL_THINKING = os.getenv("MODEL_THINKING", "false").strip().lower() in (
+    "true",
+    "1",
+    "yes",
+)
 
 
-#-----------------
+# -----------------
 # agents
-#-----------------
+# -----------------
 hr_agent = LlmAgent(
     name="hr_agent",
     model=LiteLlm(
         model=f"ollama_chat/{MODEL}",
-        api_base=OLLAMA_API_BASE, # Ensure the agent actually points to your env var base!
-        think=MODEL_THINKING
+        api_base=OLLAMA_API_BASE,  # Ensure the agent actually points to your env var base!
+        think=MODEL_THINKING,
     ),
     description="Specialist in company HR policies and procedures.",
     instruction=(
